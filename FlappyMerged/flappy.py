@@ -95,6 +95,7 @@ def main():
     SOUNDS['swoosh'] = pygame.mixer.Sound('assets/audio/swoosh' + soundExt)
     SOUNDS['wing'] = pygame.mixer.Sound('assets/audio/wing' + soundExt)
 
+    """creating object for handling q-learning """
     q = Q()
     while True:
         # select random background sprites
@@ -133,7 +134,8 @@ def main():
 
         movementInfo = showWelcomeAnimation()
         crashInfo = mainGame(movementInfo, q)
-        #showGameOverScreen(crashInfo)
+        print(crashInfo['score'])
+
 
 
 
@@ -179,8 +181,7 @@ def mainGame(movementInfo, q):
     playerFlapAcc = -9  # players speed on flapping
     playerFlapped = False  # True when player flaps
 
-
-
+    """initializing variables used for q-learning"""
     previous_state_x = 0
     previous_state_y = 0
     current_pipe = lowerPipes[0]
@@ -188,11 +189,12 @@ def mainGame(movementInfo, q):
 
     while True:
 
+        """calculating parameters for evaulating current state"""
         player_mid_pos = playerx + IMAGES['player'][0].get_width() / 2
         pipex = current_pipe['x'] + IMAGES['pipe'][0].get_width() / 2
         pipey = current_pipe['y']
 
-        # change current pipe
+        """updating current_pipe (closest to player pipe on the right)"""
         if pipex - player_mid_pos <= 0:
             current_index = lowerPipes.index(current_pipe)
             next_pipe = lowerPipes[current_index + 1]
@@ -200,6 +202,7 @@ def mainGame(movementInfo, q):
             pipex = current_pipe['x'] + IMAGES['pipe'][0].get_width() / 2
             pipey = current_pipe['y']
 
+        """scaling state parameters (discretisation of space)"""
         x_prev, y_prev = q.convert(playery, pipex, pipey)
 
         action = 0
@@ -211,8 +214,8 @@ def mainGame(movementInfo, q):
                 if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_UP):
                     action = 1
 
-
-
+        """choosing action based on q-table"""
+        # TODO shoud we make decision once per state?
         if not manual:
             #if previous_state_x == x_prev and previous_state_y == y_prev:
                # pass
@@ -222,7 +225,7 @@ def mainGame(movementInfo, q):
             previous_state_y = y_prev
 
 
-        # Perform the action and get the next state and reward
+        # Perform the action (jump)
         if action == 1:
             # Jump
             if playery > -2 * IMAGES['player'][0].get_height():
@@ -233,18 +236,10 @@ def mainGame(movementInfo, q):
         global last_print_time
         current_time = time.time()
         if current_time - last_print_time > 0.25:
-            # print("playerx: ", playerx, "playery: ", playery, "pipex: ", pipex , "pipey: ", pipey)
-            # print("xdistance: ", x_distance, "ydistance", y_distance)
-            # x, y = q.scale_distances(x_distance, y_distance)
-            # print(x, y)
-            # print("state: v")
-            # q.print_state(x, y)
+            # printing and debugging here
             last_print_time = current_time
 
-
-
-
-
+        # game logic - moving the player, pipes, updating score ...
         if True:
             # check for score
             playerMidPos = playerx + IMAGES['player'][0].get_width() / 2
@@ -316,26 +311,15 @@ def mainGame(movementInfo, q):
                                upperPipes, lowerPipes)
         crash = False
 
+        #checking for crash
         if crashTest[0]:
             crash = True
-            # print(minx, miny, maxx, maxy)
-            """
-            return {
-                'y': playery,
-                'groundCrash': crashTest[1],
-                'basex': basex,
-                'upperPipes': upperPipes,
-                'lowerPipes': lowerPipes,
-                'score': score,
-                'playerVelY': playerVelY,
-                'playerRot': playerRot
-            }
-            """
-        # ----------
 
-        # help line
+
+        """drawing line between player and next pipe"""
         pygame.draw.line(SCREEN, (255, 0, 0), (player_mid_pos, playery), (pipex, pipey))
 
+        """updating current state after the player action"""
         player_mid_pos = playerx + IMAGES['player'][0].get_width() / 2
         pipex = current_pipe['x'] + IMAGES['pipe'][0].get_width() / 2
         pipey = current_pipe['y']
@@ -347,17 +331,13 @@ def mainGame(movementInfo, q):
             pipex = current_pipe['x'] + IMAGES['pipe'][0].get_width() / 2
             pipey = current_pipe['y']
 
-        # print("player and pipe x :", pipex - player_mid_pos)
-
+        """scaling the distance (discretisation of space)"""
         x_distance = pipex - player_mid_pos
         y_distance = pipey - playery
         new_x, new_y = q.convert(playery, pipex, pipey)
 
-        # -----------------
-
         reward = -1000 if crash is True else 15
         q.update_q_table(x_prev, y_prev, action, reward, new_x, new_y)
-
 
         pygame.display.update()
         FPSCLOCK.tick(FPS)
@@ -374,7 +354,6 @@ def mainGame(movementInfo, q):
                 'playerVelY': playerVelY,
                 'playerRot': playerRot
             }
-
 
 
 
