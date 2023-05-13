@@ -3,7 +3,7 @@ teaching AI to play flappy bird using q-learning and genetic algorithm
 
 q-learning
 filmik: https://www.youtube.com/watch?v=yyNOa9aB77E&t=3s <br>
-kod z filmiku: https://github.com/hsahib2912/AI-Flappy-Birds
+kod z filmiku: https://github.com/hsahib2912/AI-Flappy-Birds <br>
 podstawowa gra (bez ai): https://github.com/sourabhv/FlapPyBird
 
 sprawozdanie:
