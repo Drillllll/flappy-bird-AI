@@ -3,11 +3,14 @@ import random
 import sys
 import pygame
 from pygame.locals import *
-from q import *
+from qlearningagent import *
 import time
 
+""" manual = False for teaching the agent, manual = True for playing on your own """
+manual = False
 last_print_time = time.time()
-FPS = 60
+FPS = 60 if manual else 1000
+
 SCREENWIDTH = 288
 SCREENHEIGHT = 512
 PIPEGAPSIZE = 175  # gap between upper and lower part of pipe
@@ -96,7 +99,10 @@ def main():
     SOUNDS['wing'] = pygame.mixer.Sound('assets/audio/wing' + soundExt)
 
     """creating object for handling q-learning """
-    q = Q()
+    q = QLearningAgent()
+    if(q.load):
+        q.load_q_table()
+
     while True:
         # select random background sprites
         randBg = random.randint(0, len(BACKGROUNDS_LIST) - 1)
@@ -134,10 +140,8 @@ def main():
 
         movementInfo = showWelcomeAnimation()
         crashInfo = mainGame(movementInfo, q)
-        print(crashInfo['score'])
-
-
-
+        # print(crashInfo['score'])
+        q.scores.append(crashInfo['score'])
 
 
 
@@ -178,14 +182,14 @@ def mainGame(movementInfo, q):
     playerRot = 45  # player's rotation
     playerVelRot = 3  # angular speed
     playerRotThr = 20  # rotation threshold
-    playerFlapAcc = -9  # players speed on flapping
+    playerFlapAcc = -9   # players speed on flapping
     playerFlapped = False  # True when player flaps
 
     """initializing variables used for q-learning"""
     previous_state_x = 0
     previous_state_y = 0
     current_pipe = lowerPipes[0]
-    manual = False
+
 
     while True:
 
@@ -208,6 +212,10 @@ def mainGame(movementInfo, q):
         action = 0
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+                q.scores.append(score)
+                if(q.save):
+                    q.save_q_table()
+                q.display_scores()
                 pygame.quit()
                 sys.exit()
             if manual:
@@ -218,8 +226,8 @@ def mainGame(movementInfo, q):
         # TODO shoud we make decision once per state?
         if not manual:
             #if previous_state_x == x_prev and previous_state_y == y_prev:
-               # pass
-            #else:
+                #pass
+           # else:
             action = q.choose_action(x_prev, y_prev)
             previous_state_x = x_prev
             previous_state_y = y_prev
@@ -231,12 +239,14 @@ def mainGame(movementInfo, q):
             if playery > -2 * IMAGES['player'][0].get_height():
                 playerVelY = playerFlapAcc
                 playerFlapped = True
-                SOUNDS['wing'].play()
+                #SOUNDS['wing'].play()
 
         global last_print_time
         current_time = time.time()
         if current_time - last_print_time > 0.25:
             # printing and debugging here
+            print("state: ", x_prev, y_prev)
+            print(playery, pipex, pipey, playerx, pipey - playery)
             last_print_time = current_time
 
         # game logic - moving the player, pipes, updating score ...
@@ -247,7 +257,7 @@ def mainGame(movementInfo, q):
                 pipeMidPos = pipe['x'] + IMAGES['pipe'][0].get_width() / 2
                 if pipeMidPos <= playerMidPos < pipeMidPos + 4:
                     score += 1
-                    SOUNDS['point'].play()
+                    #SOUNDS['point'].play()
 
             # playerIndex basex change
             if (loopIter + 1) % 3 == 0:
@@ -336,7 +346,7 @@ def mainGame(movementInfo, q):
         y_distance = pipey - playery
         new_x, new_y = q.convert(playery, pipex, pipey)
 
-        reward = -1000 if crash is True else 15
+        reward = -1000 if crash is True else 3
         q.update_q_table(x_prev, y_prev, action, reward, new_x, new_y)
 
         pygame.display.update()
@@ -371,9 +381,9 @@ def playerShm(playerShm):
 def getRandomPipe():
     """returns a randomly generated pipe"""
     # y of gap between upper and lower pipe
-    gapY = random.randrange(0, int(BASEY * 0.6 - PIPEGAPSIZE))
-    #gapY = random.randrange(40, 60)
-    #gapY = 50
+    #gapY = random.randrange(-50, int(BASEY * 0.6 - PIPEGAPSIZE)+20)
+    gapY = random.randrange(-10, int(BASEY * 0.6 - PIPEGAPSIZE) + 20)
+    #gapY = random.randrange(0, int(BASEY * 0.6 - PIPEGAPSIZE))
     gapY += int(BASEY * 0.2)
     pipeHeight = IMAGES['pipe'][0].get_height()
     pipeX = SCREENWIDTH + 10
