@@ -3,11 +3,10 @@ import random
 import sys
 import pygame
 from pygame.locals import *
-from qlearningagent import *
 import time
 
 """ manual = False for teaching the agent, manual = True for playing on your own """
-manual = False
+manual = True
 last_print_time = time.time()
 FPS = 60 if manual else 1000
 
@@ -98,10 +97,6 @@ def main():
     SOUNDS['swoosh'] = pygame.mixer.Sound('assets/audio/swoosh' + soundExt)
     SOUNDS['wing'] = pygame.mixer.Sound('assets/audio/wing' + soundExt)
 
-    """creating object for handling q-learning """
-    q = QLearningAgent()
-    if(q.load):
-        q.load_q_table()
 
     while True:
         # select random background sprites
@@ -139,14 +134,14 @@ def main():
 
 
         movementInfo = showWelcomeAnimation()
-        crashInfo = mainGame(movementInfo, q)
-        # print(crashInfo['score'])
-        q.scores.append(crashInfo['score'])
+        crashInfo = mainGame(movementInfo)
+        print(crashInfo['score'])
 
 
 
 
-def mainGame(movementInfo, q):
+
+def mainGame(movementInfo):
     score = playerIndex = loopIter = 0
     playerIndexGen = movementInfo['playerIndexGen']
     playerx, playery = int(SCREENWIDTH * 0.2), movementInfo['playery']
@@ -185,9 +180,6 @@ def mainGame(movementInfo, q):
     playerFlapAcc = -9   # players speed on flapping
     playerFlapped = False  # True when player flaps
 
-    """initializing variables used for q-learning"""
-    previous_state_x = 0
-    previous_state_y = 0
     current_pipe = lowerPipes[0]
 
 
@@ -206,31 +198,17 @@ def mainGame(movementInfo, q):
             pipex = current_pipe['x'] + IMAGES['pipe'][0].get_width() / 2
             pipey = current_pipe['y']
 
-        """scaling state parameters (discretisation of space)"""
-        x_prev, y_prev = q.convert(playery, pipex, pipey)
+
 
         action = 0
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
-                q.scores.append(score)
-                if(q.save):
-                    q.save_q_table()
-                q.display_scores()
                 pygame.quit()
                 sys.exit()
             if manual:
                 if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_UP):
                     action = 1
 
-        """choosing action based on q-table"""
-        # TODO shoud we make decision once per state?
-        if not manual:
-            #if previous_state_x == x_prev and previous_state_y == y_prev:
-                #pass
-           # else:
-            action = q.choose_action(x_prev, y_prev)
-            previous_state_x = x_prev
-            previous_state_y = y_prev
 
 
         # Perform the action (jump)
@@ -245,7 +223,6 @@ def mainGame(movementInfo, q):
         current_time = time.time()
         if current_time - last_print_time > 0.25:
             # printing and debugging here
-            print("state: ", x_prev, y_prev)
             print(playery, pipex, pipey, playerx, pipey - playery)
             last_print_time = current_time
 
@@ -328,26 +305,6 @@ def mainGame(movementInfo, q):
 
         """drawing line between player and next pipe"""
         pygame.draw.line(SCREEN, (255, 0, 0), (player_mid_pos, playery), (pipex, pipey))
-
-        """updating current state after the player action"""
-        player_mid_pos = playerx + IMAGES['player'][0].get_width() / 2
-        pipex = current_pipe['x'] + IMAGES['pipe'][0].get_width() / 2
-        pipey = current_pipe['y']
-
-        if pipex - player_mid_pos <= 0:
-            current_index = lowerPipes.index(current_pipe)
-            next_pipe = lowerPipes[current_index + 1]
-            current_pipe = next_pipe
-            pipex = current_pipe['x'] + IMAGES['pipe'][0].get_width() / 2
-            pipey = current_pipe['y']
-
-        """scaling the distance (discretisation of space)"""
-        x_distance = pipex - player_mid_pos
-        y_distance = pipey - playery
-        new_x, new_y = q.convert(playery, pipex, pipey)
-
-        reward = -1000 if crash is True else 3
-        q.update_q_table(x_prev, y_prev, action, reward, new_x, new_y)
 
         pygame.display.update()
         FPSCLOCK.tick(FPS)
