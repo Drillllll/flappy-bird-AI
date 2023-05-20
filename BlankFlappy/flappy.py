@@ -4,6 +4,8 @@ import sys
 import pygame
 from pygame.locals import *
 import time
+import os
+import neat
 
 """ manual = False for teaching the agent, manual = True for playing on your own """
 manual = True
@@ -57,7 +59,7 @@ except NameError:
     xrange = range
 
 
-def main():
+def main(genomes, config):
     global SCREEN, FPSCLOCK
     pygame.init()
     FPSCLOCK = pygame.time.Clock()
@@ -134,17 +136,23 @@ def main():
 
 
         movementInfo = showWelcomeAnimation()
-        crashInfo = mainGame(movementInfo)
+        crashInfo = mainGame(movementInfo, genomes, config)
         print(crashInfo['score'])
 
 
 
 
 
-def mainGame(movementInfo):
-    score = playerIndex = loopIter = 0
+def mainGame(movementInfo, genomes, config):
+    score = loopIter = 0
     playerIndexGen = movementInfo['playerIndexGen']
-    playerx, playery = int(SCREENWIDTH * 0.2), movementInfo['playery']
+    #playerx, playery = int(SCREENWIDTH * 0.2), movementInfo['playery']
+    playerIndex = []
+    playerx = []
+    playery = []
+    playerMidPos = []
+    player_mid_pos = []
+    crash = []
 
     basex = movementInfo['basex']
     baseShift = IMAGES['base'].get_width() - IMAGES['background'].get_width()
@@ -170,7 +178,8 @@ def mainGame(movementInfo):
     pipeVelX = -4.25 #-128 * dt
 
     # player velocity, max velocity, downward acceleration, acceleration on flap
-    playerVelY = -9  # player's velocity along Y, default same as playerFlapped
+    #playerVelY = -9  # player's velocity along Y, default same as playerFlapped
+    playerVelY = []
     playerMaxVelY = 10  # max vel along Y, max descend speed
     playerMinVelY = -8  # min vel along Y, max ascend speed
     playerAccY = 1  # players downward acceleration
@@ -178,7 +187,8 @@ def mainGame(movementInfo):
     playerVelRot = 3  # angular speed
     playerRotThr = 20  # rotation threshold
     playerFlapAcc = -9   # players speed on flapping
-    playerFlapped = False  # True when player flaps
+    #playerFlapped = False  # True when player flaps
+    playerFlapped = []
 
     current_pipe = lowerPipes[0]
 
@@ -186,17 +196,19 @@ def mainGame(movementInfo):
     while True:
 
         """calculating parameters for evaulating current state"""
-        player_mid_pos = playerx + IMAGES['player'][0].get_width() / 2
+        for i in range(len(playerx)):
+            player_mid_pos[i] = playerx[i] + IMAGES['player'][0].get_width() / 2
         pipex = current_pipe['x'] + IMAGES['pipe'][0].get_width() / 2
         pipey = current_pipe['y']
 
         """updating current_pipe (closest to player pipe on the right)"""
-        if pipex - player_mid_pos <= 0:
-            current_index = lowerPipes.index(current_pipe)
-            next_pipe = lowerPipes[current_index + 1]
-            current_pipe = next_pipe
-            pipex = current_pipe['x'] + IMAGES['pipe'][0].get_width() / 2
-            pipey = current_pipe['y']
+        for i in range(len(player_mid_pos)):
+            if pipex - player_mid_pos <= 0:
+                current_index = lowerPipes.index(current_pipe)
+                next_pipe = lowerPipes[current_index + 1]
+                current_pipe = next_pipe
+                pipex = current_pipe['x'] + IMAGES['pipe'][0].get_width() / 2
+                pipey = current_pipe['y']
 
 
 
@@ -214,49 +226,56 @@ def mainGame(movementInfo):
         # Perform the action (jump)
         if action == 1:
             # Jump
-            if playery > -2 * IMAGES['player'][0].get_height():
-                playerVelY = playerFlapAcc
-                playerFlapped = True
-                #SOUNDS['wing'].play()
+            for i in range(len(playery)):
+                if playery[i] > -2 * IMAGES['player'][0].get_height():
+                    playerVelY[i] = playerFlapAcc
+                    playerFlapped[i] = True
+                    #SOUNDS['wing'].play()
 
         global last_print_time
         current_time = time.time()
-        if current_time - last_print_time > 0.25:
-            # printing and debugging here
-            print(playery, pipex, pipey, playerx, pipey - playery)
-            last_print_time = current_time
+        for i in range(len(playerx)):
+            if current_time - last_print_time > 0.25:
+                # printing and debugging here
+                print(playery[i], pipex, pipey, playerx[i], pipey - playery[i])
+                last_print_time = current_time
 
         # game logic - moving the player, pipes, updating score ...
         if True:
             # check for score
-            playerMidPos = playerx + IMAGES['player'][0].get_width() / 2
-            for pipe in upperPipes:
-                pipeMidPos = pipe['x'] + IMAGES['pipe'][0].get_width() / 2
-                if pipeMidPos <= playerMidPos < pipeMidPos + 4:
-                    score += 1
-                    #SOUNDS['point'].play()
+            for i in range(len(playerMidPos)):
+                playerMidPos[i] = playerx[i] + IMAGES['player'][0].get_width() / 2
+                for pipe in upperPipes:
+                    pipeMidPos = pipe['x'] + IMAGES['pipe'][0].get_width() / 2
+                    if pipeMidPos <= playerMidPos[i] < pipeMidPos + 4:
+                        score += 1
+                        #SOUNDS['point'].play()
 
             # playerIndex basex change
-            if (loopIter + 1) % 3 == 0:
-                playerIndex = next(playerIndexGen)
+            for i in range(len(playerIndex)):
+                if (loopIter + 1) % 3 == 0:
+                    playerIndex[i] = next(playerIndexGen)
             loopIter = (loopIter + 1) % 30
             basex = -((-basex + 100) % baseShift)
 
             # rotate the player
-            if playerRot > -90:
-                playerRot -= playerVelRot
+            for i in range(len(playerRot)):
+                if playerRot[i] > -90:
+                    playerRot[i] -= playerVelRot
 
             # player's movement
-            if playerVelY < playerMaxVelY and not playerFlapped:
-                playerVelY += playerAccY
-            if playerFlapped:
-                playerFlapped = False
+            for i in range(len(playerVelY)):
+                if playerVelY[i] < playerMaxVelY and not playerFlapped[i]:
+                    playerVelY[i] += playerAccY
+                if playerFlapped[i]:
+                    playerFlapped[i] = False
 
                 # more rotation to cover the threshold (calculated in visible rotation)
                 playerRot = 45
 
-            playerHeight = IMAGES['player'][playerIndex].get_height()
-            playery += min(playerVelY, BASEY - playery - playerHeight)
+            for i in range(len(playery)):
+                playerHeight = IMAGES['player'][playerIndex[i]].get_height()
+                playery[i] += min(playerVelY[i], BASEY - playery[i] - playerHeight)
 
             # move pipes to left
             for uPipe, lPipe in zip(upperPipes, lowerPipes):
@@ -290,37 +309,40 @@ def mainGame(movementInfo):
             if playerRot <= playerRotThr:
                 visibleRot = playerRot
 
-            playerSurface = pygame.transform.rotate(IMAGES['player'][playerIndex], visibleRot)
-            SCREEN.blit(playerSurface, (playerx, playery))
+            for i in range(len(playerx)):
+                playerSurface = pygame.transform.rotate(IMAGES['player'][playerIndex[i]], visibleRot)
+                SCREEN.blit(playerSurface, (playerx[i], playery[i]))
 
         # check for crash here
-        crashTest = checkCrash({'x': playerx, 'y': playery, 'index': playerIndex},
-                               upperPipes, lowerPipes)
-        crash = False
-
-        #checking for crash
-        if crashTest[0]:
-            crash = True
+        for i in range(len(playerx)):
+            crashTest = checkCrash({'x': playerx[i], 'y': playery[i], 'index': playerIndex[i]},
+                                   upperPipes, lowerPipes)
+            crash[i] = False
+            #checking for crash
+            if crashTest[0]:
+                crash = True
 
 
         """drawing line between player and next pipe"""
-        pygame.draw.line(SCREEN, (255, 0, 0), (player_mid_pos, playery), (pipex, pipey))
+        for i in range(playery):
+            pygame.draw.line(SCREEN, (255, 0, 0), (player_mid_pos[i], playery[i]), (pipex, pipey))
 
         pygame.display.update()
         FPSCLOCK.tick(FPS)
         #FPSCLOCK.tick()
 
-        if crash:
-            return {
-                'y': playery,
-                'groundCrash': crashTest[1],
-                'basex': basex,
-                'upperPipes': upperPipes,
-                'lowerPipes': lowerPipes,
-                'score': score,
-                'playerVelY': playerVelY,
-                'playerRot': playerRot
-            }
+        for i in range(len(playery)):
+            if crash[i]:
+                return {
+                    'y': playery[i],
+                    'groundCrash': crashTest[1],
+                    'basex': basex,
+                    'upperPipes': upperPipes,
+                    'lowerPipes': lowerPipes,
+                    'score': score,
+                    'playerVelY': playerVelY[i],
+                    'playerRot': playerRot
+                }
 
 
 
@@ -457,6 +479,18 @@ def showWelcomeAnimation():
         'playerIndexGen': playerIndexGen,
     }
 
+def run(config_path):
+    config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction, neat.DefaultSpeciesSet, neat.DefaultStagnation, config_path)
+    p = neat.Population(config)
+    p.add_reporter(neat.StdOutReporter(True))
+    stats = neat.StatisticsReporter()
+    p.add_reporter(stats)
 
-if __name__ == '__main__':
+    winner = p.run(main,50)
+
+
+if _name_ == '_main_':
+    local_dir = os.path.dirname(_file_)
+    config_path = os.path.join(local_dir, "config-feedforward.txt")
+    run(config_path)
     main()
