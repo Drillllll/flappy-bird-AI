@@ -152,6 +152,7 @@ def eval_genomes(genomes, config):
         for x, bird in enumerate(birds):
             if pygame.sprite.spritecollide(bird, pipe_group, False):  # Collision
                 ge[x].fitness -= 1
+                #HEHEHEE
                 birds.pop(x)
                 nets.pop(x)
                 ge.pop(x)
