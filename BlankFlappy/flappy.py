@@ -79,6 +79,7 @@ def generate_pipes():
 
 # Główna pętla gry
 def eval_genomes(genomes, config):
+
     nets = []
     ge = []
     # bird = Bird(50, 200)
@@ -90,22 +91,52 @@ def eval_genomes(genomes, config):
     pygame.font.init()
     font = pygame.font.Font(None, 36)
 
-    for g in genomes:
-        net = neat.nn.FeedForwardNetwork(g, config)
+    for _, g in genomes:
+        net = neat.nn.FeedForwardNetwork.create(g, config)
         nets.append(net)
         birds.append(Bird(50, 200))
         g.fitness = 0
         ge.append(g)
 
     while running:
+        #clock.tick(30)
+
+        # Generowanie nowych rur
+        if len(pipe_group) < 2:
+            generate_pipes()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+                pygame.quit()
+                quit()
             # elif event.type == pygame.KEYDOWN:
             #     if event.key == pygame.K_SPACE:
             #         bird.flap()
 
-        # Aktualizacja obiektów
+        pipe_ind = 0
+        if len(birds) > 0:
+            if len(pipe_group) > 1 and birds[0].rect.x > pipe_group.sprites()[1].rect.x + pipe_group.sprites()[
+                1].image.get_width():
+                pipe_ind = 1
+        else:
+            run = False
+            break
+
+        # Aktualizacja obiektów !!!!! dla kazdego ptatak
+        for x, bird in enumerate(birds):
+            bird.update()
+            ge[x].fitness += 0.1
+            if not pipe_group.sprites()[0].passed:
+                output = nets[x].activate((bird.rect.y, abs(bird.rect.y - pipe_group.sprites()[1].rect.y),
+                                           abs(bird.rect.y - pipe_group.sprites()[0].rect.y)))
+                if output[0] > 0.5:
+                    bird.flap()
+            else:
+                if abs(bird.rect.y - HEIGHT) < 100:
+                    bird.flap()
+
+
         all_sprites.update()
 
         # Sprawdzanie kolizji ptaka z rurami
@@ -137,13 +168,17 @@ def eval_genomes(genomes, config):
                 all_sprites.remove(pipe)
                 pipe_group.remove(pipe)
 
-        # Generowanie nowych rur
-        if len(pipe_group) < 2:
-            generate_pipes()
+        # # Generowanie nowych rur
+        # if len(pipe_group) < 2:
+        #     generate_pipes()
 
         # Rysowanie obiektów na ekranie
         screen.blit(background_image, (0, 0))  # Narysowanie tła
         all_sprites.draw(screen)
+
+        for bird in birds:
+            screen.blit(bird.image, bird.rect)
+
 
         # Wyświetlanie wyniku
         score_text = font.render("Score: " + str(score), True, (0, 0, 0))
@@ -153,7 +188,7 @@ def eval_genomes(genomes, config):
         pygame.display.flip()
         clock.tick(60)
 
-    pygame.quit()
+
 
 
 def run(config_file):
