@@ -77,4 +77,3 @@ species_elitism      = 2
 
 [DefaultReproduction]
 elitism            = 2
-surviv
