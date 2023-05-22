@@ -1,5 +1,6 @@
 import pygame
 import random
+import pygame.transform
 
 
 # Inicjalizacja Pygame
@@ -25,9 +26,11 @@ class Bird(pygame.sprite.Sprite):
 
 # Klasa reprezentująca rurę
 class Pipe(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, flipped=False):
         super().__init__()
         self.image = pygame.image.load("assets/sprites/pipe-green.png")
+        if flipped:
+            self.image = pygame.transform.flip(self.image, False, True)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -62,7 +65,7 @@ pipe_group = pygame.sprite.Group()
 def generate_pipes():
     pipe_gap = 200  # Odstęp pomiędzy rurami
     pipe_y = random.randint(-200, 0)
-    pipe_bottom = Pipe(WIDTH, pipe_y)
+    pipe_bottom = Pipe(WIDTH, pipe_y,flipped=True)
     pipe_top = Pipe(WIDTH, pipe_y + pipe_bottom.rect.height + pipe_gap)
     pipe_group.add(pipe_bottom)
     pipe_group.add(pipe_top)
