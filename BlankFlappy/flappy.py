@@ -234,11 +234,11 @@ def run(config_file):
     for i in range(len(my_stats)):
         print(my_stats[i])
 
-    # Tworzenie wykresu liniowego
-    plt.plot(my_stats)
+    # Tworzenie wykresu punktowego
+    plt.scatter(range(len(my_stats)), my_stats)
 
     # Dodanie etykiet osi x i y
-    plt.xlabel('Numer pomiaru')
+    plt.xlabel('Generacja')
     plt.ylabel('Wynik')
 
     # Wyświetlenie wykresu
