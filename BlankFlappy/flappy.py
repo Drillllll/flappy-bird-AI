@@ -6,8 +6,6 @@ import matplotlib.pyplot as plt
 
 # Inicjalizacja Pygame
 pygame.init()
-
-
 # Klasa reprezentująca ptaka
 class Bird(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -68,10 +66,10 @@ pipe_group = pygame.sprite.Group()
 #Statystyki
 my_stats = []
 
-
+MAX_POINTS = 300
 # Funkcja do generowania rur
 def generate_pipes():
-    pipe_gap = 90 # Odstęp pomiędzy rurami
+    pipe_gap = 110 # Odstęp pomiędzy rurami
     pipe_y = random.randint(-200, 0)
     pipe_bottom = Pipe(WIDTH, pipe_y, flipped=True)
     pipe_top = Pipe(WIDTH, pipe_y + pipe_bottom.rect.height + pipe_gap)
@@ -83,7 +81,7 @@ def generate_pipes():
 
 # Główna pętla gry
 def eval_genomes(genomes, config):
-
+    isMAXpoints = 0
     nets = []
     ge = []
     # bird = Bird(50, 200)
@@ -94,6 +92,7 @@ def eval_genomes(genomes, config):
     score = 0
     pygame.font.init()
     font = pygame.font.Font(None, 36)
+
 
     for _, g in genomes:
         net = neat.nn.FeedForwardNetwork.create(g, config)
@@ -107,8 +106,8 @@ def eval_genomes(genomes, config):
             pipe_group.remove(p)
             all_sprites.remove(p)
 
-    while running and len(birds) > 0:
-        clock.tick(10000)
+    while running and len(birds) > 0 and isMAXpoints == 0:
+        clock.tick(1000000000)
 
         # Generowanie nowych rur
         if len(pipe_group) < 2:
@@ -195,13 +194,15 @@ def eval_genomes(genomes, config):
 
 
         # Wyświetlanie wyniku
-        score_text = font.render("Score: " + str(score/2), True, (0, 0, 0))
+        score_text = font.render("Score: " + str(int(score/2)), True, (0, 0, 0))
         screen.blit(score_text, (10, 10))
-
+        if score > MAX_POINTS:
+            isMAXpoints = 1
         # Aktualizacja ekranu
         pygame.display.flip()
         #clock.tick(60)
-    my_stats.append(score/2)
+    my_stats.append(int(score/2))
+    print("wynik: ",int(score/2))
 
 
 
@@ -226,23 +227,19 @@ def run(config_file):
     # p.add_reporter(neat.Checkpointer(5))
 
     # Run for up to 50 generations.
-    winner = p.run(eval_genomes, 20)
-
-    # show final stats
-    #print('\nBest genome:\n{!s}'.format(winner))
-
-    for i in range(len(my_stats)):
-        print(my_stats[i])
+    winner = p.run(eval_genomes, 100)
 
     # Tworzenie wykresu punktowego
     plt.scatter(range(len(my_stats)), my_stats)
 
     # Dodanie etykiet osi x i y
+    plt.title("populacja: 5, Ilosc generacji: 100 ")
     plt.xlabel('Generacja')
     plt.ylabel('Wynik')
 
     # Wyświetlenie wykresu
     plt.show()
+    plt.savefig('pop5gen100.png')
 
 
 if __name__ == '__main__':
