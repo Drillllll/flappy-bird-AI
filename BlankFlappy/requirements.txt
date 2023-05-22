@@ -1,0 +1,4 @@
+pygame~=2.4.0
+keyboard
+numpy
+neat-python

@@ -9,6 +9,7 @@ verify_ssl = true
 pygame = "*"
 keyboard = "*"
 numpy = "*"
+neat-python = "*"
 
 [requires]
 python_version = "3"
