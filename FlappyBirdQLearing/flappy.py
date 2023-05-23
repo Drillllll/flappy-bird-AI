@@ -13,6 +13,7 @@ manual = False
 last_print_time = time.time()
 FPS = 60 if manual else 100
 
+#
 SCREENWIDTH = 288
 SCREENHEIGHT = 512
 PIPEGAPSIZE = 175  # gap between upper and lower part of pipe
