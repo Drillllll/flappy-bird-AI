@@ -16,7 +16,7 @@ class QLearningAgent:
 
         # saving and loading q_table from file
         self.save = False
-        self.load = False
+        self.load = True
 
         # q_table update parameters
         self.learning_rate = 0.6
@@ -62,7 +62,8 @@ class QLearningAgent:
         print (self.q_table[x][y][1], self.q_table[x][y][0])
 
     def display_scores(self):
-        plt.scatter(range(len(self.scores)), self.scores)
+        plt.semilogy(range(len(self.scores)), self.scores, 'o')
+        #plt.scatter(range(len(self.scores)), self.scores)
         plt.xlabel('generacje')
         plt.ylabel('wynik')
         plt.title('wyniki w kolejnych generacjach')

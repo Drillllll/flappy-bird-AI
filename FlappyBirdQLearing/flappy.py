@@ -6,10 +6,12 @@ from pygame.locals import *
 from qlearningagent import *
 import time
 
+# podstawowa wersja gry, z której korzystano: https://github.com/sourabhv/FlapPyBird
+
 """ manual = False for teaching the agent, manual = True for playing on your own """
 manual = False
 last_print_time = time.time()
-FPS = 60 if manual else 1000
+FPS = 60 if manual else 100
 
 SCREENWIDTH = 288
 SCREENHEIGHT = 512
@@ -102,8 +104,17 @@ def main():
     q = QLearningAgent()
     if(q.load):
         q.load_q_table()
+    max_scores_counter = 0
 
     while True:
+        print("max scores counter: ", max_scores_counter)
+        if max_scores_counter == 10:
+            print("Agent achieved score: 1000, 10 times")
+            if (q.save):
+                q.save_q_table()
+            q.display_scores()
+            break
+
         # select random background sprites
         randBg = random.randint(0, len(BACKGROUNDS_LIST) - 1)
         IMAGES['background'] = pygame.image.load(BACKGROUNDS_LIST[randBg]).convert()
@@ -141,8 +152,11 @@ def main():
         movementInfo = showWelcomeAnimation()
         crashInfo = mainGame(movementInfo, q)
         # print(crashInfo['score'])
-        q.scores.append(crashInfo['score'])
-
+        q.scores.append(crashInfo['score'] + 1) # 1 is added to make sure that semilogy works for score=0
+        if crashInfo['score'] == 1000:
+            max_scores_counter += 1
+        else:
+            max_scores_counter = 0
 
 
 
@@ -245,8 +259,8 @@ def mainGame(movementInfo, q):
         current_time = time.time()
         if current_time - last_print_time > 0.25:
             # printing and debugging here
-            print("state: ", x_prev, y_prev)
-            print(playery, pipex, pipey, playerx, pipey - playery)
+            #print("state: ", x_prev, y_prev)
+            #print(playery, pipex, pipey, playerx, pipey - playery)
             last_print_time = current_time
 
         # game logic - moving the player, pipes, updating score ...
@@ -346,12 +360,15 @@ def mainGame(movementInfo, q):
         y_distance = pipey - playery
         new_x, new_y = q.convert(playery, pipex, pipey)
 
-        reward = -1000 if crash is True else 3
+        reward = -10000 if crash is True else 1
         q.update_q_table(x_prev, y_prev, action, reward, new_x, new_y)
 
         pygame.display.update()
         FPSCLOCK.tick(FPS)
         #FPSCLOCK.tick()
+
+        if score == 1000:
+            crash = True
 
         if crash:
             return {
