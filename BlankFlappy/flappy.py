@@ -66,10 +66,10 @@ pipe_group = pygame.sprite.Group()
 #Statystyki
 my_stats = []
 
-MAX_POINTS = 300
+MAX_POINTS = 100
 # Funkcja do generowania rur
 def generate_pipes():
-    pipe_gap = 110 # Odstęp pomiędzy rurami
+    pipe_gap = 100 # Odstęp pomiędzy rurami
     pipe_y = random.randint(-200, 0)
     pipe_bottom = Pipe(WIDTH, pipe_y, flipped=True)
     pipe_top = Pipe(WIDTH, pipe_y + pipe_bottom.rect.height + pipe_gap)
@@ -81,12 +81,9 @@ def generate_pipes():
 
 # Główna pętla gry
 def eval_genomes(genomes, config):
-    isMAXpoints = 0
     nets = []
     ge = []
-    # bird = Bird(50, 200)
     birds = []
-    # all_sprites.add(bird)
     running = True
     clock = pygame.time.Clock()
     score = 0
@@ -106,7 +103,7 @@ def eval_genomes(genomes, config):
             pipe_group.remove(p)
             all_sprites.remove(p)
 
-    while running and len(birds) > 0 and isMAXpoints == 0:
+    while running and len(birds) > 0:
         clock.tick(1000000000)
 
         # Generowanie nowych rur
@@ -118,14 +115,10 @@ def eval_genomes(genomes, config):
                 running = False
                 pygame.quit()
                 quit()
-            # elif event.type == pygame.KEYDOWN:
-            #     if event.key == pygame.K_SPACE:
-            #         bird.flap()
 
         pipe_ind = 0
         if len(birds) > 0:
-            if len(pipe_group) > 1 and birds[0].rect.x > pipe_group.sprites()[1].rect.x + pipe_group.sprites()[
-                1].image.get_width():
+            if len(pipe_group) > 1 and birds[0].rect.x > pipe_group.sprites()[1].rect.x + pipe_group.sprites()[1].image.get_width():
                 pipe_ind = 1
         else:
             run = False
@@ -141,7 +134,7 @@ def eval_genomes(genomes, config):
                 if output[0] > 0.5:
                     bird.flap()
             else:
-                if abs(bird.rect.y - HEIGHT) < 200:
+                if abs(bird.rect.y - HEIGHT) < (HEIGHT-100):
                     bird.flap()
 
 
@@ -151,17 +144,15 @@ def eval_genomes(genomes, config):
         for x, bird in enumerate(birds):
             if pygame.sprite.spritecollide(bird, pipe_group, False):  # Collision
                 ge[x].fitness -= 1
-                #HEHEHEE
                 birds.pop(x)
                 nets.pop(x)
                 ge.pop(x)
-                # running = False
 
             # Sprawdzanie, czy ptak przeleciał przez rurę
             for pipe in pipe_group:
                 if pipe.rect.right < bird.rect.left and not pipe.passed and pipe.rect.left < bird.rect.left:
                     pipe.passed = True
-                    score += 1
+                    score += 0.5
                     ge[x].fitness += 10
 
             # Sprawdzanie, czy ptak wyszedł poza ekran
@@ -169,7 +160,6 @@ def eval_genomes(genomes, config):
                 birds.pop(x)
                 nets.pop(x)
                 ge.pop(x)
-                # running = False
 
         # Usuwanie rur, które wyszły poza ekran
         for pipe in pipe_group:
@@ -177,33 +167,26 @@ def eval_genomes(genomes, config):
                 all_sprites.remove(pipe)
                 pipe_group.remove(pipe)
 
-        # # Generowanie nowych rur
-        # if len(pipe_group) < 2:
-        #     generate_pipes()
-
         # Rysowanie obiektów na ekranie
         screen.blit(background_image, (0, 0))  # Narysowanie tła
         all_sprites.draw(screen)
 
-        #print("Ile jest w tablicy: ", len(birds))
-        #i = 0
         for bird in birds:
             screen.blit(bird.image, bird.rect)
-            #i += 1
-            #print("PTAK ",i, " X: ", bird.rect.x, " Y: ", bird.rect.y)
-        #print("Ile sie wyswietlaa: ", i)
 
 
         # Wyświetlanie wyniku
-        score_text = font.render("Score: " + str(int(score/2)), True, (0, 0, 0))
+        score_text = font.render("Score: " + str(int(score)), True, (0, 0, 0))
         screen.blit(score_text, (10, 10))
-        if score > MAX_POINTS:
-            isMAXpoints = 1
         # Aktualizacja ekranu
         pygame.display.flip()
         #clock.tick(60)
-    my_stats.append(int(score/2))
-    print("wynik: ",int(score/2))
+        if score > 5000:
+            my_stats.append(int(score))
+            print("wynik: ", int(score))
+            return
+    my_stats.append(int(score))
+    print("wynik: ",int(score))
 
 
 
@@ -234,13 +217,11 @@ def run(config_file):
     plt.scatter(range(len(my_stats)), my_stats)
 
     # Dodanie etykiet osi x i y
-    plt.title("populacja: 5, Ilosc generacji: 100 ")
     plt.xlabel('Generacja')
     plt.ylabel('Wynik')
 
     # Wyświetlenie wykresu
     plt.show()
-    plt.savefig('pop5gen100.png')
 
 
 if __name__ == '__main__':
