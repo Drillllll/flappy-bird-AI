@@ -104,11 +104,14 @@ def eval_genomes(genomes, config):
             all_sprites.remove(p)
 
     while running and len(birds) > 0:
-        clock.tick(1000000000)
+        clock.tick(120)
 
         # Generowanie nowych rur
         if len(pipe_group) < 2:
             generate_pipes()
+        for p in pipe_group:
+            if p.passed and len(pipe_group) == 2:
+                generate_pipes()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
